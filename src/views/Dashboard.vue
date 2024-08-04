@@ -44,6 +44,10 @@
         <h3 class="text-xl mb-4">Add Sibling</h3>
         <form @submit.prevent="addSibling">
           <div class="mb-4">
+            <label class="block mb-1">Guardian ID</label>
+            <input v-model="newSibling.guardianId" type="text" class="w-full border px-2 py-1 rounded" readonly>
+          </div>
+          <div class="mb-4">
             <label class="block mb-1">First Name</label>
             <input v-model="newSibling.firstName" type="text" class="w-full border px-2 py-1 rounded" required>
           </div>
@@ -68,17 +72,17 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useAuthStore } from '@/stores/auth'; // Adjust path as needed
 
-const siblings = ref([
-  // This should be replaced with actual data from your backend
-]);
+const authStore = useAuthStore();
 
+const siblings = ref([]);
 const isModalOpen = ref(false);
 const newSibling = ref({
+  guardianId: authStore.user.id || '', // Initialize with the logged-in user's ID
   firstName: '',
   lastName: '',
   placeOfBirth: '',
@@ -92,6 +96,7 @@ const openModal = () => {
 const closeModal = () => {
   isModalOpen.value = false;
   newSibling.value = {
+    guardianId: authStore.user.id || '',
     firstName: '',
     lastName: '',
     placeOfBirth: '',
@@ -99,20 +104,33 @@ const closeModal = () => {
   };
 };
 
+// Function to set authorization header
+const setAuthHeader = () => {
+  const token = authStore.token;
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete axios.defaults.headers.common['Authorization'];
+  }
+};
 
+// Fetch siblings with authorization header
 const fetchSiblings = async () => {
+  setAuthHeader(); // Ensure the authorization header is set
   try {
-    const response = await axios.get('http://localhost:8080/siblings/get');
+    const response = await axios.get('/siblings/get');
     siblings.value = response.data;
   } catch (error) {
     console.error('Error fetching siblings:', error);
   }
 };
 
+// Add sibling with authorization header
 const addSibling = async () => {
+  setAuthHeader(); // Ensure the authorization header is set
   try {
     // Send a POST request to your backend API
-    const response = await axios.post('http://localhost:8080/siblings/add', newSibling.value);
+    const response = await axios.post('/siblings/add', newSibling.value);
     
     // Add sibling to the list
     siblings.value.push(response.data);
@@ -123,10 +141,12 @@ const addSibling = async () => {
   }
 };
 
+// Delete sibling with authorization header
 const deleteSibling = async (id) => {
+  setAuthHeader(); // Ensure the authorization header is set
   try {
     // Send a DELETE request to your backend API
-    await axios.delete(`http://localhost:8080/siblings/delete/${id}`);
+    await axios.delete(`/siblings/delete/${id}`);
     
     // Remove sibling from the list
     siblings.value = siblings.value.filter(sibling => sibling.id !== id);
@@ -134,8 +154,7 @@ const deleteSibling = async (id) => {
     console.error('Error deleting sibling:', error);
   }
 };
-</script>
 
-<style scoped>
-/* Add any additional styles if needed */
-</style>
+// Fetch siblings when component is mounted
+onMounted(fetchSiblings);
+</script>
