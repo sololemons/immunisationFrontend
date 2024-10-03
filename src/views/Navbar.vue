@@ -1,4 +1,3 @@
-
 <template>
   <div>
     <!-- Navbar -->
@@ -49,14 +48,17 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router'; // Import useRouter
 import logoImage from '@/assets/chanjohealth.png';
 import useAuthStore from '@/stores/auth';
 
 const authStore = useAuthStore();
+const router = useRouter(); // Initialize router instance
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 const logout = () => {
   authStore.logout();
+  router.push('/'); // Redirect to homepage after logout
 };
 </script>
 
